@@ -1,0 +1,4 @@
+# one field id per line (or comma separated); '#' starts a comment
+CX.OLD.FIELD
+4000
+# re:FL01\d\d     <- regex for multi-instance fields

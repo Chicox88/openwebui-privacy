@@ -1,0 +1,24 @@
+# Extra / override endpoints for efinder (use with --catalog examples/custom_catalog.yaml).
+# Keys are documented at the top of encompass_field_finder/catalog.py.
+entries:
+  # Example: enable a guessed endpoint after `efinder probe` showed it exists on your instance
+  - key: ddm_field_rules_probe
+    enabled: true
+
+  # Example: a brand-new endpoint with automatic replace support
+  - key: my_company_cdo_rules
+    category: Custom Data Objects
+    item_type: Field mapping CDO
+    location: "Global CDO '{name}'"
+    list:
+      path: /encompass/v1/company/customObjects/field-mappings
+    name_keys: [name]
+    decode_base64: true
+    update:
+      method: PUT
+      path: /encompass/v1/company/customObjects/field-mappings
+      body: item
+
+  # Example: switch off a built-in source you do not care about
+  - key: itemization_fee_management
+    enabled: false

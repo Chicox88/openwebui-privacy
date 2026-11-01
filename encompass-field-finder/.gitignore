@@ -1,0 +1,9 @@
+.env
+efinder-results.json
+efinder-backups/
+efinder-modified-exports/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+build/
+dist/

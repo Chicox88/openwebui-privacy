@@ -311,10 +311,12 @@ class OfflineExportSource(Source):
             out_path = os.path.join(ctx.output_dir, _relative_out(top))
             for c, (ok, msg) in results.items():
                 status = ("dry_run" if ctx.dry_run else "applied") if ok else "failed"
+                before = c.ref.snippet
+                after = ctx.matcher.replace(before, c.ref.field_id, c.new_field_id)[0] if ok else before
                 outcomes.append(ChangeOutcome(
                     c.ref.ref_id, c.ref.field_id, c.action, status,
                     (f"would write {out_path}: " if ctx.dry_run else f"wrote {out_path}: ") + msg
-                    if ok else msg))
+                    if ok else msg, before, after))
             if not ctx.dry_run and any(ok for ok, _ in results.values()):
                 os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
                 with open(out_path, "wb") as fh:

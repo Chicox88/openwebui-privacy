@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Encompass Field Finder</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --panel-2:#f0f2f5; --text:#1d2330; --muted:#5d6675; --border:#d9dde3;
+  --accent:#1f5fbf; --accent-text:#fff; --accent-soft:#e6eefb;
+  --ok:#1a7f37; --ok-soft:#dcf5e3; --warn:#9a6700; --warn-soft:#fff3cd; --bad:#c62828; --bad-soft:#fde3e3;
+  --info-soft:#e3f0ff; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --radius:10px; --mono:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1218; --panel:#171b23; --panel-2:#1e232d; --text:#e5e9f0; --muted:#9aa4b2; --border:#2b313c;
+    --accent:#5b9bff; --accent-text:#0b1220; --accent-soft:#1a2a45;
+    --ok:#4ac26b; --ok-soft:#143322; --warn:#e3b341; --warn-soft:#3a2f10; --bad:#ff6b6b; --bad-soft:#3d1717;
+    --info-soft:#13263f; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1218; --panel:#171b23; --panel-2:#1e232d; --text:#e5e9f0; --muted:#9aa4b2; --border:#2b313c;
+  --accent:#5b9bff; --accent-text:#0b1220; --accent-soft:#1a2a45;
+  --ok:#4ac26b; --ok-soft:#143322; --warn:#e3b341; --warn-soft:#3a2f10; --bad:#ff6b6b; --bad-soft:#3d1717;
+  --info-soft:#13263f; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+a{color:var(--accent)}
+header{display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+header h1{font-size:16px;margin:0;font-weight:650;white-space:nowrap}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);font:inherit;cursor:pointer}
+nav button.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+nav button .count{font-size:11px;background:var(--panel-2);border-radius:10px;padding:0 6px;margin-left:4px}
+.spacer{flex:1}
+.conn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--ok)} .dot.off{background:var(--warn)}
+main{max-width:1400px;margin:0 auto;padding:20px}
+.view{display:none}.view.active{display:block}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+label.inline{display:flex;align-items:center;gap:8px;font-weight:normal;margin:8px 0}
+.hint{color:var(--muted);font-size:12px;margin-top:4px}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font:inherit}
+textarea{font-family:var(--mono);font-size:13px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+button.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font:inherit;cursor:pointer;white-space:nowrap}
+button.btn:hover{background:var(--panel-2)}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text);font-weight:600}
+button.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:600}
+button.btn.small{padding:4px 10px;font-size:12px}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.paths{border:1px solid var(--border);border-radius:8px;min-height:44px;padding:4px;background:var(--panel)}
+.path{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;font-family:var(--mono);font-size:12px}
+.path:nth-child(even){background:var(--panel-2)}
+.path span{flex:1;word-break:break-all}
+.path button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px}
+.empty{color:var(--muted);font-size:13px;padding:8px}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;border:1px solid transparent}
+.p-high,.p-auto,.p-ok,.p-applied{background:var(--ok-soft);color:var(--ok)}
+.p-medium,.p-manual,.p-dry_run{background:var(--warn-soft);color:var(--warn)}
+.p-low,.p-failed,.p-error,.p-forbidden,.p-manual_only{background:var(--bad-soft);color:var(--bad)}
+.p-replace_only{background:var(--info-soft);color:var(--accent)}
+.p-none,.p-not_available,.p-skipped{background:var(--panel-2);color:var(--muted)}
+.log{background:var(--panel-2);border-radius:8px;padding:10px;font-family:var(--mono);font-size:12px;max-height:280px;overflow:auto;white-space:pre-wrap}
+.spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;min-width:150px;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:12px}
+.stat.warn b{color:var(--bad)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;color:var(--text)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.chip b{font-variant-numeric:tabular-nums}
+.toolbar{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:8px;margin-bottom:10px}
+@media (max-width:900px){.toolbar{grid-template-columns:1fr 1fr}}
+.tablewrap{overflow:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--panel-2);position:sticky;top:0;z-index:1;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+tr.ref{cursor:pointer}
+tr.ref:hover td{background:var(--panel-2)}
+tr.ref.sel td{background:var(--accent-soft)}
+tr.detail td{background:var(--panel-2);cursor:default}
+td.snip{font-family:var(--mono);font-size:12px;max-width:380px;word-break:break-word;color:var(--muted)}
+td .name{font-weight:600}
+td .sub{color:var(--muted);font-size:12px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:4px 12px;font-size:12.5px}
+.kv div:nth-child(odd){color:var(--muted)}
+.kv code{font-family:var(--mono);word-break:break-all}
+.actionbar{position:sticky;bottom:0;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:12px 16px;margin-top:12px;display:none;z-index:15}
+.actionbar.show{display:block}
+.mapgrid{display:grid;grid-template-columns:auto auto 1fr;gap:6px 10px;align-items:center;margin:8px 0}
+.mapgrid code{font-family:var(--mono)}
+.notice{border-radius:8px;padding:10px 12px;margin:10px 0;font-size:13px}
+.notice.warn{background:var(--warn-soft);color:var(--text);border:1px solid var(--warn)}
+.notice.bad{background:var(--bad-soft);border:1px solid var(--bad)}
+.notice.ok{background:var(--ok-soft);border:1px solid var(--ok)}
+.notice.info{background:var(--info-soft);border:1px solid var(--accent)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--text);color:var(--bg);padding:10px 14px;border-radius:8px;opacity:0;transition:opacity .2s;z-index:50;max-width:420px}
+.toast.show{opacity:.95}
+.diff{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word}
+.diff .b{color:var(--bad)} .diff .a{color:var(--ok)}
+.muted{color:var(--muted)}
+details summary{cursor:pointer;font-weight:600;margin:6px 0}
+.welcome ol{margin:6px 0 0 18px;padding:0}
+.welcome li{margin:4px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Encompass Field Finder</h1>
+  <nav id="tabs">
+    <button data-view="scan" class="active">Scan</button>
+    <button data-view="results">Results <span class="count" id="tabcount">0</span></button>
+    <button data-view="coverage">Coverage</button>
+    <button data-view="changes">Changes</button>
+    <button data-view="settings">Settings</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="conn" id="conn" title="Connection settings"><span class="dot" id="conndot"></span><span id="conntext">Checking…</span></div>
+</header>
+
+<main>
+<!-- ============================================================ SCAN -->
+<section class="view active" id="view-scan">
+  <div class="card welcome" id="welcome" style="display:none">
+    <h2>Welcome</h2>
+    <ol>
+      <li>Open <a href="#" data-goto="settings">Settings</a> and enter your Encompass Developer Connect details (use an admin API user).</li>
+      <li>Optionally add folders of exported Encompass settings (business rules, DDM, input forms, reports…).</li>
+      <li>Enter field IDs below and click <b>Find references</b>.</li>
+    </ol>
+    <div class="hint">Everything runs on this computer. Credentials are only sent to Encompass.</div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h2>1. Field IDs</h2>
+      <textarea id="fields" rows="7" placeholder="CX.MY.FIELD&#10;4000&#10;1172"></textarea>
+      <div class="hint">One per line or comma separated. Prefix <code>re:</code> for a pattern, e.g. <code>re:FL01\d\d</code>.</div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" id="loadFieldsFile">Load from file…</button>
+        <input type="file" id="fieldsFile" accept=".txt,.csv" hidden>
+        <button class="btn small" id="clearFields">Clear</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>2. Where to look</h2>
+      <label class="inline"><input type="checkbox" id="useApi" checked> Query Encompass through the API <span class="muted" id="apiNote"></span></label>
+      <label class="inline"><input type="checkbox" id="templates" checked> Include loan templates <span class="muted">(slower on large instances)</span></label>
+      <label class="inline"><input type="checkbox" id="loanUsage"> Count loans that hold a value</label>
+      <label>Exported Encompass files and folders</label>
+      <div class="paths" id="paths"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" id="addFolder">Add folder…</button>
+        <button class="btn small" id="addFiles">Add files…</button>
+        <input type="text" id="pathInput" placeholder="…or paste a path and press Enter" style="flex:1;min-width:200px">
+      </div>
+      <div class="hint">Business rules, DDM, desktop input forms, reports, dashboards and alerts have no public API. Export them and add them here.</div>
+      <label>Match sensitivity</label>
+      <select id="minConf">
+        <option value="medium" selected>Normal: clear references only</option>
+        <option value="high">Strict: formulas, code and exact matches only</option>
+        <option value="low">Loose: also bare words (noisy for numeric IDs)</option>
+      </select>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row">
+      <button class="btn primary" id="scanBtn">Find references</button>
+      <button class="btn" id="loadResults">Open saved results…</button>
+      <input type="file" id="resultsFile" accept=".json" hidden>
+      <span class="spacer"></span>
+      <span id="scanStatus" class="muted"></span>
+    </div>
+    <div id="scanLogWrap" style="display:none;margin-top:12px"><div class="log" id="scanLog"></div></div>
+  </div>
+</section>
+
+<!-- ============================================================ RESULTS -->
+<section class="view" id="view-results">
+  <div id="noResults" class="card"><p class="muted" style="margin:0">No results yet. Run a scan from the <a href="#" data-goto="scan">Scan</a> tab.</p></div>
+  <div id="resultsBody" style="display:none">
+    <div class="row" style="margin-bottom:12px">
+      <div id="resultTitle" style="font-weight:600"></div>
+      <span class="spacer"></span>
+      <button class="btn small" data-dl="html">Download report (HTML)</button>
+      <button class="btn small" data-dl="csv">CSV</button>
+      <button class="btn small" data-dl="json">JSON</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div id="gapNotice"></div>
+    <div class="chips" id="catChips"></div>
+    <div class="toolbar">
+      <input type="text" id="q" placeholder="Search name, location, snippet…">
+      <select id="fField"><option value="">All fields</option></select>
+      <select id="fConf"><option value="">Any confidence</option><option>high</option><option>medium</option><option>low</option></select>
+      <select id="fChange"><option value="">Any change type</option><option value="auto">Automatic</option><option value="replace_only">Replace only</option><option value="manual">Manual</option><option value="none">Info only</option></select>
+      <select id="fGroup"><option value="field">Group: field</option><option value="category">Group: category</option><option value="none">No grouping</option></select>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="selAll" title="Select all changeable rows shown"></th>
+          <th>Field</th><th>Category</th><th>Item</th><th>Where to find it</th><th>Match</th><th>Change</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="hint" id="rowCount"></div>
+
+    <div class="actionbar" id="actionbar">
+      <div class="row">
+        <b id="selCount">0 selected</b>
+        <span class="muted">·</span>
+        <label class="inline" style="margin:0"><input type="radio" name="act" value="replace" checked> Replace with a new field ID</label>
+        <label class="inline" style="margin:0"><input type="radio" name="act" value="remove"> Remove the reference</label>
+        <span class="spacer"></span>
+        <button class="btn" id="clearSel">Clear selection</button>
+        <button class="btn primary" id="previewBtn">Preview changes</button>
+      </div>
+      <div id="mapWrap"><div class="mapgrid" id="mapGrid"></div></div>
+      <div class="hint" id="removeHint" style="display:none">References inside formulas or rules are never removed automatically, because that would break them. They are listed as manual, with the location to edit.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ COVERAGE -->
+<section class="view" id="view-coverage">
+  <div class="card">
+    <h2>What was and wasn't checked</h2>
+    <p class="muted" style="margin-top:0">If an area is <b>not scanned</b>, "no references" there means nothing. Export that area from Encompass and add it on the Scan tab.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Status</th><th>Area</th><th>Source</th><th>Items</th><th>Note</th></tr></thead>
+      <tbody id="covRows"><tr><td colspan="5" class="muted">Run a scan first.</td></tr></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============================================================ CHANGES -->
+<section class="view" id="view-changes">
+  <div class="card">
+    <div class="row">
+      <h2 style="margin:0" id="chgTitle">Changes</h2>
+      <span class="spacer"></span>
+      <button class="btn" id="openFolder">Open backups &amp; modified exports</button>
+      <button class="btn danger" id="applyBtn" disabled>Apply these changes</button>
+    </div>
+    <div id="chgNotice"></div>
+    <div id="chgLogWrap" style="display:none;margin-top:10px"><div class="log" id="chgLog"></div></div>
+    <div class="tablewrap" style="margin-top:12px"><table>
+      <thead><tr><th>Status</th><th>Field</th><th>Item</th><th>What happens</th><th>Before → after</th></tr></thead>
+      <tbody id="chgRows"><tr><td colspan="5" class="muted">Select references on the Results tab and click <b>Preview changes</b>.</td></tr></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============================================================ SETTINGS -->
+<section class="view" id="view-settings">
+  <div class="grid2">
+    <div class="card">
+      <h2>Encompass connection</h2>
+      <label>Environment</label>
+      <select id="sEnv">
+        <option value="https://api.elliemae.com">Production (api.elliemae.com)</option>
+        <option value="https://concept.api.elliemae.com">UAT / Concept (concept.api.elliemae.com)</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <input type="text" id="sBase" placeholder="https://api.elliemae.com" style="margin-top:6px;display:none">
+      <label>Instance ID</label><input type="text" id="sInstance" placeholder="BE11223344" autocomplete="off">
+      <label>API user name</label><input type="text" id="sUser" placeholder="api_admin" autocomplete="off">
+      <div class="hint">Without <code>@encompass:BE…</code>. Use an administrator or super administrator user, or custom field calculations stay hidden.</div>
+      <label>Password</label><input type="password" id="sPass" autocomplete="new-password">
+      <label>API client ID</label><input type="text" id="sClient" autocomplete="off">
+      <label>API client secret</label><input type="password" id="sSecret" autocomplete="new-password">
+      <details style="margin-top:10px"><summary>Use a bearer token instead</summary>
+        <input type="password" id="sToken" placeholder="Paste an access token" autocomplete="off">
+      </details>
+      <label class="inline"><input type="checkbox" id="sRemember"> <span id="rememberLabel">Remember password and secret in Windows Credential Manager</span></label>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="saveSettings">Save</button>
+        <button class="btn" id="testConn">Test connection</button>
+        <button class="btn" id="forget">Forget saved secrets</button>
+      </div>
+      <div id="connResult"></div>
+    </div>
+    <div class="card">
+      <h2>Advanced</h2>
+      <label>Folder for saved results, backups and modified exports</label>
+      <input type="text" id="sOut" placeholder="Documents\EncompassFieldFinder">
+      <label>Parallel API requests</label>
+      <input type="number" id="sWorkers" min="1" max="16" value="4">
+      <div class="hint">Lower this if Encompass returns rate-limit errors (HTTP 429).</div>
+      <label>Extra endpoint catalog (JSON/YAML, optional)</label>
+      <div class="row"><input type="text" id="sCatalog" style="flex:1"><button class="btn small" id="pickCatalog">Browse…</button></div>
+      <label class="inline"><input type="checkbox" id="sUndoc"> Also try undocumented endpoints</label>
+      <p class="hint" id="settingsFile"></p>
+      <h2 style="margin-top:20px">Appearance</h2>
+      <select id="theme"><option value="">Follow system</option><option value="light">Light</option><option value="dark">Dark</option></select>
+      <p class="hint">Version __APP_VERSION__</p>
+    </div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const TOKEN = "__APP_TOKEN__";
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {get(k,d){try{const v=localStorage.getItem("eff."+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+               set(k,v){try{localStorage.setItem("eff."+k,JSON.stringify(v))}catch(e){}}};
+
+const S = {state:null, paths:[], scanJob:null, result:null, refsById:{}, selected:new Set(), expanded:new Set(),
+           cat:"", previewJob:null, lastPreview:null};
+
+async function api(method, path, body){
+  const r = await fetch(path, {method, headers:{"Content-Type":"application/json","X-App-Token":TOKEN},
+                               body: body===undefined ? undefined : JSON.stringify(body)});
+  let data = null; try{ data = await r.json(); }catch(e){}
+  if(!r.ok) throw new Error((data && data.error) || `HTTP ${r.status}`);
+  return data;
+}
+function toast(msg, ms=3200){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),ms);}
+function show(view){$$("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  $$(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+view)); store.set("view",view); window.scrollTo(0,0);}
+$$("#tabs button").forEach(b=>b.onclick=()=>show(b.dataset.view));
+document.addEventListener("click",e=>{const g=e.target.closest("[data-goto]");if(g){e.preventDefault();show(g.dataset.goto);}});
+$("#conn").onclick=()=>show("settings");
+
+// ---------------------------------------------------------------- theme
+function applyTheme(t){ if(t) document.documentElement.dataset.theme=t; else delete document.documentElement.dataset.theme; }
+applyTheme(store.get("theme",""));
+$("#theme").value=store.get("theme","");
+$("#theme").onchange=e=>{store.set("theme",e.target.value);applyTheme(e.target.value);};
+
+// ---------------------------------------------------------------- state / settings
+async function loadState(){
+  S.state = await api("GET","/api/state");
+  const s = S.state.settings;
+  const known = ["https://api.elliemae.com","https://concept.api.elliemae.com"];
+  $("#sEnv").value = known.includes(s.base_url) ? s.base_url : "custom";
+  $("#sBase").value = s.base_url; $("#sBase").style.display = $("#sEnv").value==="custom" ? "" : "none";
+  $("#sInstance").value=s.instance_id; $("#sUser").value=s.username; $("#sClient").value=s.client_id;
+  $("#sPass").placeholder = s.has_password ? "•••••••• (saved, leave blank to keep)" : "";
+  $("#sSecret").placeholder = s.has_client_secret ? "•••••••• (saved, leave blank to keep)" : "";
+  $("#sToken").placeholder = s.has_token ? "•••••••• (saved)" : "Paste an access token";
+  $("#sRemember").checked = s.remember_secrets; $("#sRemember").disabled = !s.keyring_available;
+  if(!s.keyring_available) $("#rememberLabel").textContent = "Remember secrets (unavailable: the keyring package is not installed). Secrets are kept until you close the app.";
+  $("#sOut").value = s.output_root; $("#sOut").placeholder = S.state.work_dir;
+  $("#sWorkers").value = s.workers; $("#sCatalog").value = s.catalog_path; $("#sUndoc").checked = s.include_undocumented;
+  $("#settingsFile").textContent = "Settings file: " + s.settings_file;
+  if(!S.paths.length) { S.paths = (s.export_paths||[]).slice(); renderPaths(); }
+  updateConn();
+}
+function updateConn(){
+  const on = S.state && S.state.settings.api_configured;
+  $("#conndot").className = "dot " + (on?"on":"off");
+  $("#conntext").textContent = on ? `Encompass: ${S.state.settings.instance_id || "token"}` : "Not connected (exports only)";
+  $("#apiNote").textContent = on ? "" : "(set up in Settings)";
+  $("#welcome").style.display = on || store.get("welcomed",false) ? "none" : "";
+}
+$("#sEnv").onchange=e=>{$("#sBase").style.display=e.target.value==="custom"?"":"none"; if(e.target.value!=="custom") $("#sBase").value=e.target.value;};
+function settingsPayload(){
+  return {base_url: $("#sEnv").value==="custom" ? $("#sBase").value : $("#sEnv").value,
+    instance_id:$("#sInstance").value, username:$("#sUser").value, client_id:$("#sClient").value,
+    password:$("#sPass").value, client_secret:$("#sSecret").value, token:$("#sToken").value,
+    remember_secrets:$("#sRemember").checked, output_root:$("#sOut").value, workers:$("#sWorkers").value,
+    catalog_path:$("#sCatalog").value, include_undocumented:$("#sUndoc").checked};
+}
+$("#saveSettings").onclick=async()=>{try{await api("POST","/api/settings",settingsPayload());
+  $("#sPass").value=$("#sSecret").value=$("#sToken").value=""; await loadState(); toast("Settings saved");}catch(e){toast(e.message);}};
+$("#testConn").onclick=async()=>{const box=$("#connResult");box.innerHTML='<p><span class="spinner"></span> Testing…</p>';
+  try{const r=await api("POST","/api/test-connection",settingsPayload()); $("#sPass").value=$("#sSecret").value=$("#sToken").value="";
+    box.innerHTML=`<div class="notice ${r.ok?"ok":"bad"}">${esc(r.message)}</div>`; await loadState();}
+  catch(e){box.innerHTML=`<div class="notice bad">${esc(e.message)}</div>`;}};
+$("#forget").onclick=async()=>{if(!confirm("Forget the saved password, client secret and token?"))return;
+  await api("POST","/api/settings/clear-secrets",{}); await loadState(); toast("Secrets forgotten");};
+$("#pickCatalog").onclick=async()=>{try{const r=await api("POST","/api/pick",{kind:"catalog"}); if(r.paths[0]) $("#sCatalog").value=r.paths[0];}catch(e){toast(e.message);}};
+
+// ---------------------------------------------------------------- scan form
+$("#fields").value = store.get("fields","");
+$("#fields").oninput = e => store.set("fields", e.target.value);
+["templates","loanUsage","useApi"].forEach(id=>{const v=store.get(id,null); if(v!==null) $("#"+id).checked=v; $("#"+id).onchange=e=>store.set(id,e.target.checked);});
+$("#minConf").value = store.get("minConf","medium"); $("#minConf").onchange=e=>store.set("minConf",e.target.value);
+$("#clearFields").onclick=()=>{$("#fields").value="";store.set("fields","");};
+$("#loadFieldsFile").onclick=()=>$("#fieldsFile").click();
+$("#fieldsFile").onchange=async e=>{const f=e.target.files[0]; if(!f)return; const txt=await f.text();
+  const ids=txt.split(/\r?\n/).map(l=>l.split("#")[0]).join(",").split(/[,;\t]/).map(x=>x.trim()).filter(Boolean);
+  $("#fields").value=ids.join("\n"); store.set("fields",$("#fields").value); e.target.value=""; toast(`Loaded ${ids.length} field ID(s)`);};
+
+function renderPaths(){
+  const box=$("#paths");
+  box.innerHTML = S.paths.length ? S.paths.map((p,i)=>`<div class="path"><span>${esc(p)}</span><button title="Remove" data-i="${i}">×</button></div>`).join("")
+                                 : '<div class="empty">No export folders added. Only the API will be scanned.</div>';
+  $$("button[data-i]",box).forEach(b=>b.onclick=()=>{S.paths.splice(+b.dataset.i,1);renderPaths();});
+}
+function addPaths(ps){ps.forEach(p=>{p=p.trim().replace(/^"|"$/g,""); if(p && !S.paths.includes(p)) S.paths.push(p);}); renderPaths();}
+$("#addFolder").onclick=async()=>{try{addPaths((await api("POST","/api/pick",{kind:"folder"})).paths);}catch(e){toast(e.message);$("#pathInput").focus();}};
+$("#addFiles").onclick=async()=>{try{addPaths((await api("POST","/api/pick",{kind:"files"})).paths);}catch(e){toast(e.message);$("#pathInput").focus();}};
+$("#pathInput").onkeydown=e=>{if(e.key==="Enter"){addPaths([e.target.value]);e.target.value="";}};
+
+function parseFields(){return $("#fields").value.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);}
+
+async function poll(jobId, logEl, statusEl, onDone){
+  let since=0;
+  const tick=async()=>{
+    let j; try{ j=await api("GET",`/api/jobs/${jobId}?since=${since}`);}catch(e){statusEl.textContent=e.message;return;}
+    if(j.log.length){ logEl.textContent += j.log.join("\n")+"\n"; logEl.scrollTop=logEl.scrollHeight; }
+    since=j.log_total;
+    if(j.status==="running"){ statusEl.innerHTML=`<span class="spinner"></span> Working… ${j.elapsed}s`; setTimeout(tick,700); }
+    else { statusEl.textContent = j.status==="error" ? "Failed: "+j.error : `Finished in ${j.elapsed}s`; onDone(j); }
+  };
+  tick();
+}
+
+$("#scanBtn").onclick=async()=>{
+  const fields=parseFields(); if(!fields.length){toast("Enter at least one field ID");$("#fields").focus();return;}
+  store.set("welcomed",true);
+  const body={fields, export_paths:S.paths, use_api:$("#useApi").checked, templates:$("#templates").checked,
+              loan_usage:$("#loanUsage").checked, min_confidence:$("#minConf").value};
+  $("#scanBtn").disabled=true; $("#scanLogWrap").style.display=""; $("#scanLog").textContent="";
+  try{
+    const {job_id}=await api("POST","/api/scan",body);
+    poll(job_id,$("#scanLog"),$("#scanStatus"),j=>{ $("#scanBtn").disabled=false;
+      if(j.status==="done"){ setResult(j.id,j.result); show("results"); toast(`${j.result.references.length} reference(s) found`);} });
+  }catch(e){ $("#scanBtn").disabled=false; $("#scanStatus").textContent=""; toast(e.message,6000); $("#scanLog").textContent=e.message; }
+};
+$("#loadResults").onclick=()=>$("#resultsFile").click();
+$("#resultsFile").onchange=async e=>{const f=e.target.files[0]; if(!f)return;
+  try{const data=JSON.parse(await f.text()); const {job_id}=await api("POST","/api/load-results",{result:data, export_paths:S.paths});
+    setResult(job_id,data); show("results"); toast("Results loaded");}catch(err){toast("Could not load: "+err.message,6000);} e.target.value="";};
+
+// ---------------------------------------------------------------- results
+const CHANGE_LABEL={auto:"Automatic",replace_only:"Replace only",manual:"Manual",none:"Info only"};
+const STATUS_LABEL={ok:"Scanned",not_available:"Not available",forbidden:"No permission",error:"Error",skipped:"Skipped",manual_only:"NOT SCANNED"};
+const changeable = r => r.change_support==="auto" || r.change_support==="replace_only";
+
+function setResult(jobId,res){
+  S.scanJob=jobId; S.result=res; S.selected.clear(); S.expanded.clear(); S.cat=""; S.refsById={};
+  res.references.forEach(r=>S.refsById[r.ref_id]=r);
+  $("#tabcount").textContent=res.references.length;
+  $("#noResults").style.display="none"; $("#resultsBody").style.display="";
+  $("#resultTitle").textContent=`Results for ${res.field_ids.join(", ")}`;
+  const ff=$("#fField"); ff.innerHTML='<option value="">All fields</option>'+res.field_ids.map(f=>`<option>${esc(f)}</option>`).join("");
+  renderStats(); renderCoverage(); renderRows(); renderActionbar();
+}
+function renderStats(){
+  const res=S.result, refs=res.references;
+  const notScanned=res.coverage.filter(c=>c.status==="manual_only");
+  const auto=refs.filter(changeable).length, manual=refs.filter(r=>r.change_support==="manual").length;
+  const perField=res.field_ids.map(f=>`<div class="stat"><b>${refs.filter(r=>r.field_id===f).length}</b><span>${esc(f)} ${esc((res.field_info[f]||{}).description||"")}</span></div>`).join("");
+  $("#stats").innerHTML = perField +
+    `<div class="stat"><b>${auto}</b><span>can be changed automatically</span></div>`+
+    `<div class="stat"><b>${manual}</b><span>need a manual change</span></div>`+
+    `<div class="stat ${notScanned.length?"warn":""}"><b>${notScanned.length}</b><span>areas not scanned</span></div>`;
+  const warnFields=res.field_ids.filter(f=>(res.field_info[f]||{}).warning);
+  let html="";
+  if(notScanned.length) html+=`<div class="notice warn"><b>${notScanned.length} area(s) were not scanned:</b> ${notScanned.map(c=>esc(c.category)).join(", ")}. See <a href="#" data-goto="coverage">Coverage</a> for how to include them.</div>`;
+  if(warnFields.length) html+=`<div class="notice info">Not found in the field schema or custom fields: <b>${warnFields.map(esc).join(", ")}</b>. Check the spelling (or the API connection).</div>`;
+  $("#gapNotice").innerHTML=html;
+  const cats={}; refs.forEach(r=>cats[r.category]=(cats[r.category]||0)+1);
+  $("#catChips").innerHTML=`<button class="chip ${S.cat?"":"on"}" data-cat="">All <b>${refs.length}</b></button>`+
+    Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<button class="chip ${S.cat===c?"on":""}" data-cat="${esc(c)}">${esc(c)} <b>${n}</b></button>`).join("");
+  $$("#catChips .chip").forEach(b=>b.onclick=()=>{S.cat=b.dataset.cat;renderStats();renderRows();});
+}
+function filtered(){
+  const q=$("#q").value.toLowerCase(), f=$("#fField").value, c=$("#fConf").value, ch=$("#fChange").value;
+  return S.result.references.filter(r=>(!S.cat||r.category===S.cat)&&(!f||r.field_id===f)&&(!c||r.confidence===c)&&(!ch||r.change_support===ch)&&
+    (!q||[r.item_name,r.item_type,r.location,r.snippet,r.json_path,r.file_path,r.category,r.ref_id].join(" ").toLowerCase().includes(q)));
+}
+function rowHtml(r){
+  const sel=S.selected.has(r.ref_id), dis=changeable(r)?"":"disabled";
+  let where=esc(r.location);
+  const at=r.json_path || (r.line?`line ${r.line}`:"");
+  if(at) where+=`<div class="sub"><code>${esc(at)}</code></div>`;
+  let h=`<tr class="ref ${sel?"sel":""}" data-id="${r.ref_id}">
+    <td><input type="checkbox" data-sel="${r.ref_id}" ${sel?"checked":""} ${dis} title="${dis?"This one must be changed by hand":"Select"}"></td>
+    <td><code>${esc(r.field_id)}</code></td><td>${esc(r.category)}</td>
+    <td><div class="name">${esc(r.item_name)}</div><div class="sub">${esc(r.item_type)}</div></td>
+    <td>${where}</td>
+    <td class="snip"><span class="pill p-${r.confidence}">${esc(r.confidence)}</span> ${esc((r.snippet||"").slice(0,180))}</td>
+    <td><span class="pill p-${r.change_support}">${CHANGE_LABEL[r.change_support]||r.change_support}</span></td></tr>`;
+  if(S.expanded.has(r.ref_id)){
+    const kv=[["Reference ID",r.ref_id],["Match type",r.match_kind+" ("+r.confidence+")"],["Location",r.location],
+      ["JSON / element path",r.json_path],["File",r.file_path],["Line",r.line],["API call",r.api],["Found by",r.source],
+      ["Change notes",r.change_notes],["Snippet",r.snippet]].filter(x=>x[1]!==null&&x[1]!==undefined&&x[1]!=="");
+    h+=`<tr class="detail"><td></td><td colspan="6"><div class="kv">${kv.map(([k,v])=>`<div>${esc(k)}</div><div><code>${esc(v)}</code></div>`).join("")}</div>
+        <div class="row" style="margin-top:8px"><button class="btn small" data-copy="${esc(r.location)}">Copy location</button>
+        ${r.file_path?`<button class="btn small" data-copy="${esc(r.file_path)}">Copy file path</button>`:""}</div></td></tr>`;
+  }
+  return h;
+}
+function renderRows(){
+  const rows=filtered(), g=$("#fGroup").value; let html="";
+  if(g==="none") html=rows.map(rowHtml).join("");
+  else { const groups={}; rows.forEach(r=>{const k=g==="field"?r.field_id:r.category;(groups[k]=groups[k]||[]).push(r);});
+    Object.keys(groups).forEach(k=>{html+=`<tr><td colspan="7" style="background:var(--panel-2);font-weight:650">${esc(k)} <span class="muted">(${groups[k].length})</span></td></tr>`+groups[k].map(rowHtml).join("");}); }
+  $("#rows").innerHTML = html || '<tr><td colspan="7" class="muted">No references match these filters.</td></tr>';
+  $("#rowCount").textContent=`${rows.length} of ${S.result.references.length} reference(s) shown. Click a row for details.`;
+  const ch=rows.filter(changeable); $("#selAll").checked = ch.length>0 && ch.every(r=>S.selected.has(r.ref_id));
+}
+$("#rows").addEventListener("click",e=>{
+  const cp=e.target.closest("[data-copy]"); if(cp){navigator.clipboard.writeText(cp.dataset.copy).then(()=>toast("Copied"),()=>toast(cp.dataset.copy)); return;}
+  const cb=e.target.closest("input[data-sel]");
+  if(cb){ cb.checked?S.selected.add(cb.dataset.sel):S.selected.delete(cb.dataset.sel); cb.closest("tr").classList.toggle("sel",cb.checked); renderActionbar(); return; }
+  const tr=e.target.closest("tr.ref"); if(!tr) return;
+  const id=tr.dataset.id; S.expanded.has(id)?S.expanded.delete(id):S.expanded.add(id); renderRows();
+});
+["q","fField","fConf","fChange","fGroup"].forEach(id=>$("#"+id).addEventListener("input",renderRows));
+$("#selAll").onchange=e=>{filtered().filter(changeable).forEach(r=>e.target.checked?S.selected.add(r.ref_id):S.selected.delete(r.ref_id)); renderRows(); renderActionbar();};
+$("#clearSel").onclick=()=>{S.selected.clear();renderRows();renderActionbar();};
+$$("[data-dl]").forEach(b=>b.onclick=()=>{ if(S.scanJob) window.location=`/api/download?job=${S.scanJob}&fmt=${b.dataset.dl}`; });
+$$("input[name=act]").forEach(r=>r.onchange=renderActionbar);
+
+function renderActionbar(){
+  const bar=$("#actionbar"); const n=S.selected.size;
+  bar.classList.toggle("show", n>0);
+  $("#selCount").textContent=`${n} selected`;
+  const act=$("input[name=act]:checked").value;
+  $("#mapWrap").style.display = act==="replace" ? "" : "none";
+  $("#removeHint").style.display = act==="remove" ? "" : "none";
+  const fids=[...new Set([...S.selected].map(id=>S.refsById[id]?.field_id).filter(Boolean))];
+  const grid=$("#mapGrid"); const prev={}; $$("input[data-map]",grid).forEach(i=>prev[i.dataset.map]=i.value);
+  grid.innerHTML=fids.map(f=>`<code>${esc(f)}</code><span>→</span><input type="text" data-map="${esc(f)}" placeholder="new field ID, e.g. CX.NEW.FIELD" value="${esc(prev[f]||"")}">`).join("");
+}
+$("#previewBtn").onclick=()=>runChange(true);
+$("#applyBtn").onclick=()=>{
+  const p=S.lastPreview; if(!p) return;
+  const n=p.outcomes.filter(o=>o.status==="dry_run").length;
+  if(!confirm(`Apply ${n} change(s) now?\n\nAPI objects are backed up first. Exported files are written as modified copies; your originals are not touched.`)) return;
+  runChange(false, p.body);
+};
+async function runChange(dry, presetBody){
+  let body=presetBody;
+  if(!body){
+    const action=$("input[name=act]:checked").value, mapping={};
+    $$("#mapGrid input[data-map]").forEach(i=>{if(i.value.trim()) mapping[i.dataset.map]=i.value.trim();});
+    if(action==="replace"){
+      const missing=$$("#mapGrid input[data-map]").filter(i=>!i.value.trim()).map(i=>i.dataset.map);
+      if(missing.length){toast("Enter a new field ID for: "+missing.join(", ")+" (or untick those rows)",6000);
+        const first=$$("#mapGrid input[data-map]").find(i=>!i.value.trim()); if(first) first.focus(); return;}
+      const same=Object.entries(mapping).filter(([k,v])=>k.toLowerCase()===v.toLowerCase()).map(([k])=>k);
+      if(same.length){toast("New ID is the same as the old one for: "+same.join(", "),6000);return;}
+    }
+    body={scan_job:S.scanJob, action, mapping, ref_ids:[...S.selected]};
+  }
+  body={...body, dry_run:dry};
+  show("changes"); $("#applyBtn").disabled=true;
+  $("#chgTitle").textContent = dry ? "Preview (nothing has been changed yet)" : "Applying changes…";
+  $("#chgNotice").innerHTML=""; $("#chgLogWrap").style.display=""; $("#chgLog").textContent="";
+  $("#chgRows").innerHTML='<tr><td colspan="5"><span class="spinner"></span> Working…</td></tr>';
+  try{
+    const {job_id}=await api("POST","/api/apply",body);
+    const status={set textContent(v){}, set innerHTML(v){}};
+    poll(job_id,$("#chgLog"),status,j=>{
+      if(j.status!=="done"){ $("#chgNotice").innerHTML=`<div class="notice bad">${esc(j.error)}</div>`; $("#chgRows").innerHTML=""; return; }
+      renderOutcomes(j.outcomes, dry);
+      if(dry){ S.lastPreview={body, outcomes:j.outcomes}; $("#applyBtn").disabled=!j.outcomes.some(o=>o.status==="dry_run"); }
+      else { S.lastPreview=null; }
+    });
+  }catch(e){ $("#chgNotice").innerHTML=`<div class="notice bad">${esc(e.message)}</div>`; $("#chgRows").innerHTML=""; }
+}
+function renderOutcomes(outs, dry){
+  const cnt={}; outs.forEach(o=>cnt[o.status]=(cnt[o.status]||0)+1);
+  const label={dry_run:"will change",applied:"changed",manual:"manual",failed:"failed",skipped:"skipped"};
+  $("#chgTitle").textContent = dry ? "Preview (nothing has been changed yet)" : "Changes applied";
+  let note = Object.entries(cnt).map(([k,v])=>`<span class="pill p-${k}">${v} ${label[k]||k}</span>`).join(" ");
+  note = `<div class="row" style="margin:10px 0">${note}</div>`;
+  if(dry && cnt.dry_run) note+=`<div class="notice info">Review the list, then click <b>Apply these changes</b>.</div>`;
+  if(!dry) note+=`<div class="notice ok">Done. Backups of changed API objects and modified copies of export files are in your output folder. Re-import modified exports into Encompass, then run the scan again to confirm.</div>`;
+  if(cnt.manual) note+=`<div class="notice warn">${cnt.manual} reference(s) must be changed by hand. Each row says where.</div>`;
+  $("#chgNotice").innerHTML=note;
+  $("#chgRows").innerHTML = outs.map(o=>{const r=S.refsById[o.ref_id]||{};
+    const diff = (o.before!=null && o.after!=null && o.before!==o.after) ? `<div class="diff"><span class="b">− ${esc(o.before.slice(0,300))}</span>\n<span class="a">+ ${esc(o.after.slice(0,300))}</span></div>` : "";
+    return `<tr><td><span class="pill p-${o.status}">${esc(label[o.status]||o.status)}</span></td><td><code>${esc(o.field_id)}</code></td>
+      <td><div class="name">${esc(r.item_name||"")}</div><div class="sub">${esc(r.category||"")}</div></td>
+      <td>${esc(o.message)}${o.backup_path?`<div class="sub">Backup: <code>${esc(o.backup_path)}</code></div>`:""}</td><td>${diff}</td></tr>`;}).join("")
+    || '<tr><td colspan="5" class="muted">Nothing to change for this selection.</td></tr>';
+}
+$("#openFolder").onclick=async()=>{try{const r=await api("POST","/api/open-folder",{}); toast("Opened "+r.path);}catch(e){toast(e.message);}};
+
+// ---------------------------------------------------------------- coverage
+function renderCoverage(){
+  const cov=S.result.coverage.slice().sort((a,b)=>(a.status==="manual_only"?0:1)-(b.status==="manual_only"?0:1)||a.category.localeCompare(b.category));
+  $("#covRows").innerHTML=cov.map(c=>`<tr><td><span class="pill p-${c.status}">${esc(STATUS_LABEL[c.status]||c.status)}</span></td>
+    <td>${esc(c.category)}</td><td><code>${esc(c.source)}</code></td><td>${c.items_scanned}</td><td>${esc(c.note)}</td></tr>`).join("");
+}
+
+// ---------------------------------------------------------------- boot
+loadState().catch(e=>{$("#conntext").textContent="App server not reachable";toast(e.message,8000);});
+renderPaths();
+const v=store.get("view","scan"); show(["scan","settings"].includes(v)?v:"scan");
+</script>
+</body>
+</html>

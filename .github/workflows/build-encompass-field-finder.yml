@@ -1,0 +1,62 @@
+name: Build Encompass Field Finder (Windows app)
+
+on:
+  push:
+    paths:
+      - "encompass-field-finder/**"
+      - ".github/workflows/build-encompass-field-finder.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: encompass-field-finder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[dev,app,yaml]" pyinstaller
+
+      - name: Test
+        run: python -m pytest -q
+
+      - name: Build EncompassFieldFinder.exe
+        run: >
+          pyinstaller --noconfirm --onefile --console --name EncompassFieldFinder
+          --collect-data encompass_field_finder
+          --collect-submodules keyring.backends
+          packaging/efinder_app_entry.py
+
+      - name: Smoke test the exe
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist/EncompassFieldFinder.exe -ArgumentList "--no-browser","--port","8790" -PassThru
+          Start-Sleep -Seconds 8
+          $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/
+          Stop-Process -Id $p.Id -Force
+          if ($r.StatusCode -ne 200 -or $r.Content -notmatch "Encompass Field Finder") { throw "UI did not load" }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item dist/EncompassFieldFinder.exe release/
+          Copy-Item README.md release/
+          Copy-Item examples -Recurse release/examples
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EncompassFieldFinder-windows
+          path: encompass-field-finder/release/
+          retention-days: 90

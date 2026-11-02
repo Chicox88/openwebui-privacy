@@ -12,13 +12,18 @@ dependencies = ["requests>=2.25"]
 
 [project.optional-dependencies]
 yaml = ["pyyaml>=5"]
+app = ["keyring>=23"]          # remember secrets in Windows Credential Manager / macOS Keychain
 dev = ["pytest>=7"]
 
 [project.scripts]
 efinder = "encompass_field_finder.cli:main"
+efinder-app = "encompass_field_finder.app:main"
 
 [tool.setuptools.packages.find]
 include = ["encompass_field_finder*"]
+
+[tool.setuptools.package-data]
+encompass_field_finder = ["static/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

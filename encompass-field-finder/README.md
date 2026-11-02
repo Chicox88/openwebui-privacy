@@ -1,15 +1,55 @@
-# Encompass Field Dependency Finder (`efinder`)
+# Encompass Field Finder (`efinder`)
 
 Give it one or more Encompass field IDs. It finds everything in your Encompass instance that
 references or depends on those fields and tells you **where to find each one**. Where Encompass
 allows it, it can also **replace** the reference with a new field ID or **remove** it.
 
-You can use it three ways, all running the same engine:
+## Run it on your computer
+
+The app runs **entirely on your own PC**. It opens in your web browser, but it is served from
+your machine (`http://127.0.0.1`). Nothing goes to the cloud except the calls to Encompass
+itself.
+
+### Option A: the ready-made Windows app (no Python needed)
+
+1. Open the repository on GitHub, go to **Actions**, and choose **Build Encompass Field Finder
+   (Windows app)**.
+2. Open the latest green run and download **EncompassFieldFinder-windows** (zip) under
+   *Artifacts*.
+3. Unzip it and double-click **EncompassFieldFinder.exe**. Your browser opens the app. Keep the
+   small black window open while you use it; close it to stop the app.
+
+Windows SmartScreen may warn about an unsigned app the first time. Choose *More info*, then
+*Run anyway* (or ask IT to allow it). Your company may require a code-signed build.
+
+### Option B: from source with Python
+
+1. Install Python 3.9 or newer from python.org (tick *Add python.exe to PATH*) or run
+   `winget install Python.Python.3.12`.
+2. Download this folder (GitHub, *Code*, *Download ZIP*) and double-click
+   **`Start Encompass Field Finder.bat`**. The first run sets everything up (needs internet once).
+
+On macOS/Linux, run `./start.sh`.
+
+### Using the app
+
+| Tab | What it does |
+|---|---|
+| **Settings** | Enter your Developer Connect details (environment, instance ID, API user, password, client ID/secret), then click **Test connection**. Tick *Remember* to store the password and secret in Windows Credential Manager; otherwise they are forgotten when you close the app. |
+| **Scan** | Type or load field IDs, choose whether to query the API, add export folders with **Add folder…** (native Windows picker), then click **Find references**. Progress is shown live. |
+| **Results** | Summary per field, category filter chips, search, filters, and grouping. Click a row to see exactly where the reference is and copy the location. Tick rows (only ones that can be changed automatically are tickable), enter the new field ID, then click **Preview changes**. Downloads: HTML report, CSV, JSON. |
+| **Coverage** | What was scanned, what was unavailable or forbidden, and which areas were **not scanned** (no public API, and no export added). |
+| **Changes** | The preview shows each change with before → after. Nothing changes until you click **Apply these changes** and confirm. Afterwards, **Open backups & modified exports** opens the output folder. |
+
+Results, backups (the original JSON of every Encompass object changed) and modified copies of
+exported files are saved in `Documents\EncompassFieldFinder` (configurable in Settings).
+Non-secret settings live in `%APPDATA%\EncompassFieldFinder\settings.json`.
+
+### Other ways to use the same engine
 
 | Interface | Use it for |
 |---|---|
-| `efinder scan / apply` (CLI) | Scripted or repeatable runs, CI, batches of fields |
-| `efinder serve` (local web UI) | Admins who want to type field IDs, review results, tick boxes and apply |
+| `efinder scan / apply` (CLI) | Scripted or repeatable runs, batches of fields |
 | `FieldDependencyFinder` (Python API) | Your own tooling |
 
 Reports come out as console text, HTML (filterable), CSV, Markdown or JSON. The JSON is the
@@ -56,13 +96,13 @@ scan, so "no references found" never quietly means "never looked".
 
 ---
 
-## Install
+## Install for command-line / Python use
 
-Python 3.8+.
+Python 3.8+. (For the app, see *Run it on your computer* above.)
 
 ```bash
 cd encompass-field-finder
-pip install .            # or: pip install -e ".[dev,yaml]"
+pip install ".[app]"     # or: pip install -e ".[dev,app,yaml]"
 cp .env.example .env     # then fill in your Developer Connect credentials
 ```
 
@@ -153,15 +193,14 @@ How changes are kept safe:
 > `CX.NEW`, run `apply --replace CX.OLD=CX.NEW`, fix the manual items, migrate the loan data,
 > re-scan to confirm zero references, then retire `CX.OLD`.
 
-### 4. Web UI
+### 4. The app from the command line
 
 ```bash
-efinder serve            # http://127.0.0.1:8765
+efinder-app              # or: efinder serve
 ```
 
-Type field IDs and export paths, scan, filter the results, tick references, then preview and
-apply. Results download as HTML, CSV, JSON or Markdown. The UI binds to localhost, and every
-form post carries a per-process token.
+The app listens on 127.0.0.1 only, rejects requests whose Host header isn't localhost, and
+requires a per-launch token on every API call.
 
 ### 5. Python API
 

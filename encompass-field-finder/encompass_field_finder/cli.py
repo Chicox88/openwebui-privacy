@@ -188,10 +188,10 @@ def cmd_catalog(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
-    from .webui import serve
+    from .app import main as app_main
 
-    serve(args, build_config(args), host=args.host, port=args.port)
-    return 0
+    argv = ["--port", str(args.port)] + (["--no-browser"] if args.no_browser else [])
+    return app_main(argv)
 
 
 # ---------------------------------------------------------------------- parser
@@ -264,10 +264,9 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--include-undocumented", action="store_true")
     c.set_defaults(func=cmd_catalog)
 
-    w = sub.add_parser("serve", help="local web UI")
-    w.add_argument("--host", default="127.0.0.1")
+    w = sub.add_parser("serve", help="start the desktop-style app (opens in your browser, runs locally)")
     w.add_argument("--port", type=int, default=8765)
-    conn(w), common(w)
+    w.add_argument("--no-browser", action="store_true")
     w.set_defaults(func=cmd_serve)
     return p
 

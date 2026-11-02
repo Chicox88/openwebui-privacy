@@ -34,19 +34,19 @@ NO_API_AREAS: Dict[str, str] = {
     "Business Rule": "Field Data Entry, Field Triggers, Persona Access to Fields/Loan Actions, Automated "
                      "Conditions, Milestone Completion, Input Form List, Print Form rules, Loan Folder "
                      "rules... Export them from Encompass Settings (or dump them with an SDK utility) and "
-                     "scan the export with --export.",
+                     "add the export on the Scan tab (CLI: --export).",
     "Dynamic Data Management": "DDM Field Rules, Fee Rules, Data Tables and field scenarios. Export from "
-                               "Settings > Dynamic Data Management and scan with --export.",
+                               "Settings > Dynamic Data Management and add it on the Scan tab (CLI: --export).",
     "Custom Input Form (desktop)": "Desktop custom input forms and their codebase. Export from Input Form "
-                                   "Builder (Encompass package) and scan with --export. Web forms ARE "
+                                   "Builder (Encompass package) and add it on the Scan tab (CLI: --export). Web forms ARE "
                                    "covered through the API.",
-    "Report": "Report templates (pipeline / loan / financial). Export the templates and scan with --export.",
-    "Dashboard": "Dashboard templates and views. Export the templates and scan with --export.",
-    "Alert": "Custom alerts and alert rules. Export from Settings and scan with --export.",
-    "Plugin / Codebase": "Plugins, custom form codebase assemblies and SDK apps. Scan the source code or "
-                         "the DLLs with --export.",
+    "Report": "Report templates (pipeline / loan / financial). Export the templates and add them on the Scan tab (CLI: --export).",
+    "Dashboard": "Dashboard templates and views. Export the templates and add them on the Scan tab (CLI: --export).",
+    "Alert": "Custom alerts and alert rules. Export from Settings and add it on the Scan tab (CLI: --export).",
+    "Plugin / Codebase": "Plugins, custom form codebase assemblies and SDK apps. Add the source code or "
+                         "the DLLs on the Scan tab (CLI: --export).",
     "Print Forms": "Field mappings inside custom print forms (Word/PDF). The API lists the forms only; "
-                   "scan the form files with --export.",
+                   "add the form files on the Scan tab (CLI: --export).",
 }
 
 
